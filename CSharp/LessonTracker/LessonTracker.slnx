@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="Common/Common.csproj" />
+  <Project Path="Tester/Tester.csproj" />
+  <Project Path="YouTubeTracker.Api/YouTubeTracker.Api.csproj" />
+</Solution>
