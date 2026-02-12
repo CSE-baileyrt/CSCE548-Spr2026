@@ -1,5 +1,4 @@
-﻿using MySql.Data.MySqlClient;
-using PbjProject;
+﻿using MySqlConnector;
 using System;
 using System.Collections.Generic;
 
@@ -282,21 +281,22 @@ namespace PbjProject
         }
 
         // ---------- PBJ Sandwich ----------
-        public void CreatePbj(PbjSandwich s)
+        public PbjSandwich CreatePbj(PbjSandwich s)
         {
             using (var con = GetConnection())
             {
                 con.Open();
                 var cmd = new MySqlCommand(@"INSERT INTO PbjSandwich
 (customer,bread1_id,pb_id,jelly_id,bread2_id,totalCost)
-VALUES (@c,@b1,@pb,@j,@b2,@t)", con);
+VALUES (@c,@b1,@pb,@j,@b2,@t); SELECT LAST_INSERT_ID();", con);
                 cmd.Parameters.AddWithValue("@c", s.Customer);
                 cmd.Parameters.AddWithValue("@b1", s.Bread1.ID);
                 cmd.Parameters.AddWithValue("@pb", s.Pb.ID);
                 cmd.Parameters.AddWithValue("@j", s.Jelly.ID);
                 cmd.Parameters.AddWithValue("@b2", s.Bread2.ID);
                 cmd.Parameters.AddWithValue("@t", s.TotalCost);
-                cmd.ExecuteNonQuery();
+                s.ID = Convert.ToInt32(cmd.ExecuteScalar());
+                return s;
             }
         }
 
