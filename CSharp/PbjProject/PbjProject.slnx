@@ -1,5 +1,5 @@
 <Solution>
-  <Project Path="../PbjWebClient/PbjWebClient.csproj" Id="14d4e5b8-fb63-42c2-85e2-e93f78f2ba47" />
+  <Project Path="PbjWebClient/PbjWebClient.csproj" Id="14d4e5b8-fb63-42c2-85e2-e93f78f2ba47" />
   <Project Path="PBJ.Api/PBJ.Api.csproj" Id="a176b162-e81c-4854-b517-102e0e4bf4ab" />
   <Project Path="PbjProject.csproj" Id="f8690910-b05e-4ef6-92ec-87561bdb09a8" />
   <Project Path="PbjTester/PbjTester.csproj" Id="a7a3d1eb-a0f8-44a8-821f-61f0870503ef" />
