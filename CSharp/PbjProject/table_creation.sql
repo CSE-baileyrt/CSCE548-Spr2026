@@ -8,7 +8,7 @@ CREATE TABLE Bread (
 );
 
 
-CREATE TABLE PeanutButter (
+CREATE TABLE Peanut_Butter (
 	ID INT AUTO_INCREMENT PRIMARY KEY,
 	brand VARCHAR(100) NOT NULL,
 	isCrunchy BOOLEAN NOT NULL,
@@ -24,7 +24,7 @@ CREATE TABLE Jelly (
 );
 
 
-CREATE TABLE PbjSandwich (
+CREATE TABLE Pbj_Sandwich (
 	ID INT AUTO_INCREMENT PRIMARY KEY,
 	customer VARCHAR(150) NOT NULL,
 	bread1_id INT NOT NULL,
@@ -33,7 +33,7 @@ CREATE TABLE PbjSandwich (
 	bread2_id INT NOT NULL,
 	totalCost DECIMAL(10,2) NOT NULL,
 	FOREIGN KEY (bread1_id) REFERENCES Bread(ID),
-	FOREIGN KEY (pb_id) REFERENCES PeanutButter(ID),
+	FOREIGN KEY (pb_id) REFERENCES Peanut_Butter(ID),
 	FOREIGN KEY (jelly_id) REFERENCES Jelly(ID),
 	FOREIGN KEY (bread2_id) REFERENCES Bread(ID)
 );

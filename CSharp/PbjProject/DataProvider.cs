@@ -110,7 +110,7 @@ namespace PbjProject
             using (var con = GetConnection())
             {
                 con.Open();
-                var cmd = new MySqlCommand("INSERT INTO PeanutButter (brand,isCrunchy,price) VALUES (@b,@c,@p)", con);
+                var cmd = new MySqlCommand("INSERT INTO Peanut_Butter (brand,isCrunchy,price) VALUES (@b,@c,@p)", con);
                 cmd.Parameters.AddWithValue("@b", p.Brand);
                 cmd.Parameters.AddWithValue("@c", p.IsCrunchy);
                 cmd.Parameters.AddWithValue("@p", p.Price);
@@ -123,7 +123,7 @@ namespace PbjProject
             using (var con = GetConnection())
             {
                 con.Open();
-                var cmd = new MySqlCommand("SELECT * FROM PeanutButter WHERE ID=@id", con);
+                var cmd = new MySqlCommand("SELECT * FROM Peanut_Butter WHERE ID=@id", con);
                 cmd.Parameters.AddWithValue("@id", id);
                 using (var r = cmd.ExecuteReader())
                 {
@@ -145,7 +145,7 @@ namespace PbjProject
             using (var con = GetConnection())
             {
                 con.Open();
-                var cmd = new MySqlCommand("SELECT * FROM PeanutButter", con);
+                var cmd = new MySqlCommand("SELECT * FROM Peanut_Butter", con);
                 using (var r = cmd.ExecuteReader())
                 {
                     while (r.Read())
@@ -169,7 +169,7 @@ namespace PbjProject
             using (var con = GetConnection())
             {
                 con.Open();
-                var cmd = new MySqlCommand("UPDATE PeanutButter SET brand=@b,isCrunchy=@c,price=@p WHERE ID=@id", con);
+                var cmd = new MySqlCommand("UPDATE Peanut_Butter SET brand=@b,isCrunchy=@c,price=@p WHERE ID=@id", con);
                 cmd.Parameters.AddWithValue("@id", p.ID);
                 cmd.Parameters.AddWithValue("@b", p.Brand);
                 cmd.Parameters.AddWithValue("@c", p.IsCrunchy);
@@ -184,7 +184,7 @@ namespace PbjProject
             using (var con = GetConnection())
             {
                 con.Open();
-                var cmd = new MySqlCommand("DELETE FROM PeanutButter WHERE ID=@id", con);
+                var cmd = new MySqlCommand("DELETE FROM Peanut_Butter WHERE ID=@id", con);
                 cmd.Parameters.AddWithValue("@id", id);
                 cmd.ExecuteNonQuery();
             }
@@ -286,7 +286,7 @@ namespace PbjProject
             using (var con = GetConnection())
             {
                 con.Open();
-                var cmd = new MySqlCommand(@"INSERT INTO PbjSandwich
+                var cmd = new MySqlCommand(@"INSERT INTO Pbj_Sandwich
 (customer,bread1_id,pb_id,jelly_id,bread2_id,totalCost)
 VALUES (@c,@b1,@pb,@j,@b2,@t); SELECT LAST_INSERT_ID();", con);
                 cmd.Parameters.AddWithValue("@c", s.Customer);
@@ -305,7 +305,7 @@ VALUES (@c,@b1,@pb,@j,@b2,@t); SELECT LAST_INSERT_ID();", con);
             using (var con = GetConnection())
             {
                 con.Open();
-                var cmd = new MySqlCommand("SELECT * FROM PbjSandwich WHERE ID=@id", con);
+                var cmd = new MySqlCommand("SELECT * FROM Pbj_Sandwich WHERE ID=@id", con);
                 cmd.Parameters.AddWithValue("@id", id);
                 using (var r = cmd.ExecuteReader())
                 {
@@ -331,7 +331,7 @@ VALUES (@c,@b1,@pb,@j,@b2,@t); SELECT LAST_INSERT_ID();", con);
             using (var con = GetConnection())
             {
                 con.Open();
-                var cmd = new MySqlCommand("SELECT * FROM PbjSandwich", con);
+                var cmd = new MySqlCommand("SELECT * FROM Pbj_Sandwich", con);
                 using (var r = cmd.ExecuteReader())
                 {
                     while (r.Read())
@@ -358,7 +358,7 @@ VALUES (@c,@b1,@pb,@j,@b2,@t); SELECT LAST_INSERT_ID();", con);
             using (var con = GetConnection())
             {
                 con.Open();
-                var cmd = new MySqlCommand(@"UPDATE PbjSandwich SET
+                var cmd = new MySqlCommand(@"UPDATE Pbj_Sandwich SET
 customer=@c,bread1_id=@b1,pb_id=@pb,jelly_id=@j,bread2_id=@b2,totalCost=@t
 WHERE ID=@id", con);
                 cmd.Parameters.AddWithValue("@id", s.ID);
@@ -378,7 +378,7 @@ WHERE ID=@id", con);
             using (var con = GetConnection())
             {
                 con.Open();
-                var cmd = new MySqlCommand("DELETE FROM PbjSandwich WHERE ID=@id", con);
+                var cmd = new MySqlCommand("DELETE FROM Pbj_Sandwich WHERE ID=@id", con);
                 cmd.Parameters.AddWithValue("@id", id);
                 cmd.ExecuteNonQuery();
             }

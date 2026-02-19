@@ -58,7 +58,7 @@ class Program
 
     static void BusinessTestHarness()
     {
-        string connStr = "Server=localhost;Port=3306;Database=pbjproject;Uid=bailey;Pwd=password;";
+        string connStr = "Server=localhost;Port=3306;Database=pbjproject;Uid=user;Pwd=password;";
         var dp = new DataProvider(connStr);
         var bm = new BusinessManager(dp);
 
@@ -112,7 +112,7 @@ class Program
     static void DataTestHarness()
     {
 
-        string connStr = "Server=localhost;Port=3306;Database=pbjproject;Uid=bailey;Pwd=password;";
+        string connStr = "Server=localhost;Port=3306;Database=pbjproject;Uid=user;Pwd=password;";
         var dp = new DataProvider(connStr);
 
         Console.WriteLine("===== PBJ DATA PROVIDER TEST HARNESS =====\n");
