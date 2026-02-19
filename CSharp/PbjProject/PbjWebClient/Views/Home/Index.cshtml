@@ -1,0 +1,270 @@
+﻿@{
+    ViewData["Title"] = "PBJ API Client";
+}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"]</title>
+
+    <!-- Bootstrap CSS for quick layout (CDN) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+    <style>
+        .table-container { margin-top: 1rem; }
+        pre.error { color: #b94a48; background:#f8d7da; padding:10px; border-radius:4px; }
+        .mono { font-family: monospace; font-size: .95rem; }
+        .small-col { white-space: nowrap; }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="container py-4">
+        <h1 class="mb-3">PBJ API Client</h1>
+
+        <div class="card mb-3">
+            <div class="card-body">
+                <form id="settingsForm" onsubmit="return false;">
+                    <div class="row g-2 align-items-center">
+                        <div class="col-auto">
+                            <label for="baseUrl" class="col-form-label">API Base URL</label>
+                        </div>
+                        <div class="col">
+                            <input id="baseUrl" class="form-control" value="https://localhost:44387" placeholder="https://localhost:44387" />
+                        </div>
+                        <div class="col-auto">
+                            <button id="fetchAll" class="btn btn-primary">Fetch All</button>
+                        </div>
+                        <div class="col-auto">
+                            <button id="clear" class="btn btn-outline-secondary">Clear Tables</button>
+                        </div>
+                    </div>
+                    <div class="form-text mt-2">
+                        Enter the base URL for your Web API (no trailing slash recommended). Example: <span class="mono">https://localhost:44387</span>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="errorBox"></div>
+
+        <div class="table-container">
+            <h3>Breads</h3>
+            <div id="breadsSection"></div>
+        </div>
+
+        <div class="table-container">
+            <h3>Peanut Butters</h3>
+            <div id="pbsSection"></div>
+        </div>
+
+        <div class="table-container">
+            <h3>Jellies</h3>
+            <div id="jelliesSection"></div>
+        </div>
+
+        <div class="table-container">
+            <h3>PBJ Sandwiches</h3>
+            <div id="sandwichesSection"></div>
+        </div>
+
+    </div>
+
+    <!-- Bootstrap JS (optional) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        (function () {
+          const $ = id => document.getElementById(id);
+          const baseUrlInput = $('baseUrl');
+          const fetchAllBtn = $('fetchAll');
+          const clearBtn = $('clear');
+          const errorBox = $('errorBox');
+
+          // default (optional)
+          baseUrlInput.value = localStorage.getItem('pbj_baseUrl') || '';
+
+          fetchAllBtn.addEventListener('click', async () => {
+            clearError();
+            const base = (baseUrlInput.value || '').trim().replace(/\/+$/, '');
+            if (!base) return showError('Please enter the API base URL.');
+
+            localStorage.setItem('pbj_baseUrl', base);
+
+            try {
+              await Promise.all([
+                fetchAndRender(base + '/api/bread', 'breadsSection', renderBreadsTable),
+                fetchAndRender(base + '/api/peanutbutter', 'pbsSection', renderPbsTable),
+                fetchAndRender(base + '/api/jelly', 'jelliesSection', renderJelliesTable),
+                fetchAndRender(base + '/api/pbjsandwich', 'sandwichesSection', renderSandwichesTable)
+              ]);
+            } catch (err) {
+              showError('Unexpected error: ' + (err && err.message ? err.message : String(err)));
+            }
+          });
+
+          clearBtn.addEventListener('click', () => {
+            ['breadsSection', 'pbsSection', 'jelliesSection', 'sandwichesSection'].forEach(id => {
+              $(id).innerHTML = '';
+            });
+            clearError();
+          });
+
+          function showError(msg) {
+            errorBox.innerHTML = `<pre class="error">${escapeHtml(msg)}</pre>`;
+          }
+          function clearError() { errorBox.innerHTML = ''; }
+          function escapeHtml(s) {
+            return String(s).replace(/[&<>"']/g, function (m) {
+              return ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[m];
+            });
+          }
+
+          async function fetchAndRender(url, containerId, renderFn) {
+            const container = $(containerId);
+            container.innerHTML = '<div class="text-muted">Loading...</div>';
+            let resp;
+            try {
+              resp = await fetch(url, { method: 'GET', headers: { 'Accept': 'application/json' } });
+            } catch (networkErr) {
+              container.innerHTML = `<div class="text-danger">Network error calling <span class="mono">${escapeHtml(url)}</span>: ${escapeHtml(networkErr.message)}</div>`;
+              throw networkErr;
+            }
+
+            if (!resp.ok) {
+              const text = await resp.text();
+              container.innerHTML = `<div class="text-danger">Error ${resp.status} calling <span class="mono">${escapeHtml(url)}</span>: ${escapeHtml(text)}</div>`;
+              // do not throw — allow other sections to continue
+              return;
+            }
+
+            const json = await resp.json();
+            if (!Array.isArray(json)) {
+              container.innerHTML = `<div class="text-warning">Expected array response from <span class="mono">${escapeHtml(url)}</span> but got: <pre>${escapeHtml(JSON.stringify(json, null, 2))}</pre></div>`;
+              return;
+            }
+
+            container.innerHTML = '';
+            const table = renderFn(json);
+            container.appendChild(table);
+          }
+
+          // Render functions: create DOM table elements
+          function renderBreadsTable(items) {
+            // Bread: ID, brand, wheatLevel, price
+            const cols = ['ID', 'Brand', 'WheatLevel', 'Price'];
+            return buildTable(items, cols, item => [
+              item.id ?? item.ID ?? '',
+              item.brand ?? item.Brand ?? '',
+              item.wheatLevel ?? item.WheatLevel ?? '',
+              formatCurrency(item.price ?? item.Price ?? '')
+            ]);
+          }
+
+          function renderPbsTable(items) {
+            // PeanutButter: ID, brand, isCrunchy, price
+            const cols = ['ID', 'Brand', 'IsCrunchy', 'Price'];
+            return buildTable(items, cols, item => [
+              item.id ?? item.ID ?? '',
+              item.brand ?? item.Brand ?? '',
+              (item.isCrunchy ?? item.IsCrunchy) ? 'Yes' : 'No',
+              formatCurrency(item.price ?? item.Price ?? '')
+            ]);
+          }
+
+          function renderJelliesTable(items) {
+            // Jelly: ID, brand, flavor, price
+            const cols = ['ID', 'Brand', 'Flavor', 'Price'];
+            return buildTable(items, cols, item => [
+              item.id ?? item.ID ?? '',
+              item.brand ?? item.Brand ?? '',
+              item.flavor ?? item.Flavor ?? '',
+              formatCurrency(item.price ?? item.Price ?? '')
+            ]);
+          }
+
+          function renderSandwichesTable(items) {
+            // PbjSandwich: ID, customer, bread1 (object), pb (object), jelly (object), bread2 (object), totalCost
+            const cols = [
+              'ID', 'Customer', 'TotalCost',
+              'Bread1 (id/brand/wheat/price)',
+              'PB (id/brand/isCrunchy/price)',
+              'Jelly (id/brand/flavor/price)',
+              'Bread2 (id/brand/wheat/price)'
+            ];
+
+            return buildTable(items, cols, item => {
+              const id = item.id ?? item.ID ?? '';
+              const customer = item.customer ?? item.Customer ?? '';
+              const total = formatCurrency(item.totalCost ?? item.TotalCost ?? '');
+
+              // helper for nested object
+              const nest = (obj, idp='id') => {
+                if (!obj) return '';
+                const oid = (obj[idp] ?? obj.ID ?? obj.id) ?? '';
+                const brand = obj.brand ?? obj.Brand ?? '';
+                const wheat = obj.wheatLevel ?? obj.WheatLevel ?? '';
+                const price = formatCurrency(obj.price ?? obj.Price ?? '');
+                const flavor = obj.flavor ?? obj.Flavor ?? '';
+                const isCrunchy = (obj.isCrunchy ?? obj.IsCrunchy) ? 'Crunchy' : 'Smooth';
+                // return a compact multi-line string
+                let parts = [];
+                if (brand) parts.push(`${brand}`);
+                if (wheat !== '') parts.push(`w:${wheat}`);
+                if (flavor) parts.push(`fl:${flavor}`);
+                if (price) parts.push(`${price}`);
+                if (isCrunchy && (obj.isCrunchy !== undefined || obj.IsCrunchy !== undefined)) parts.push(isCrunchy);
+                return `${oid}${parts.length ? ' — ' + parts.join(' | ') : ''}`;
+              };
+
+              const bread1 = nest(item.bread1 ?? item.Bread1 ?? null);
+              const pb = nest(item.pb ?? item.Pb ?? null);
+              const jelly = nest(item.jelly ?? item.Jelly ?? null);
+              const bread2 = nest(item.bread2 ?? item.Bread2 ?? null);
+
+              return [id, customer, total, bread1, pb, jelly, bread2];
+            });
+          }
+
+          function buildTable(items, headers, rowFn) {
+            const table = document.createElement('table');
+            table.className = 'table table-sm table-striped table-bordered';
+            const thead = document.createElement('thead');
+            const trh = document.createElement('tr');
+            headers.forEach(h => {
+              const th = document.createElement('th');
+              th.scope = 'col';
+              th.textContent = h;
+              trh.appendChild(th);
+            });
+            thead.appendChild(trh);
+            table.appendChild(thead);
+
+            const tbody = document.createElement('tbody');
+            items.forEach(it => {
+              const tr = document.createElement('tr');
+              const cells = rowFn(it);
+              cells.forEach(c => {
+                const td = document.createElement('td');
+                td.innerHTML = escapeHtml(String(c ?? ''));
+                tr.appendChild(td);
+              });
+              tbody.appendChild(tr);
+            });
+            table.appendChild(tbody);
+            return table;
+          }
+
+          function formatCurrency(v) {
+            if (v === null || v === undefined || v === '') return '';
+            // try numeric
+            const n = Number(v);
+            if (!isNaN(n)) {
+              return n.toLocaleString(undefined, { style: 'currency', currency: 'USD' });
+            }
+            return String(v);
+          }
+        })();
+    </script>
+</body>
+</html>
