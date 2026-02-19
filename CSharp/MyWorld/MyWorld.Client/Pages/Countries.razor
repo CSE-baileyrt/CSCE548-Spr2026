@@ -1,0 +1,86 @@
+﻿@page "/countries"
+@inject MyWorld.Client.Services.CountryService CountryService
+
+<h3>Countries</h3>
+
+<div class="mb-3">
+    <input @bind="continentFilter" placeholder="Filter by continent (optional)" class="form-control" />
+    <button class="btn btn-primary mt-2" @onclick="LoadCountries">Filter</button>
+    <button class="btn btn-secondary mt-2 ms-2" @onclick="ClearFilter">Clear</button>
+</div>
+
+@if (isLoading)
+{
+    <p><em>Loading...</em></p>
+}
+else if (errorMessage != null)
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+else if (countries == null || !countries.Any())
+{
+    <p>No countries found.</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Code</th>
+                <th>Name</th>
+                <th>Continent</th>
+                <th>Population</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var c in countries)
+            {
+                <tr>
+                    <td>@c.Code</td>
+                    <td>@c.Name</td>
+                    <td>@c.Continent</td>
+                    <td>@(c.Population?.ToString("N0") ?? "-")</td>
+                    <td><a class="btn btn-sm btn-outline-primary" href="@($"/country/{c.Code}")">Details</a></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<MyWorld.Client.Models.CountryDto>? countries;
+    private bool isLoading;
+    private string? errorMessage;
+    private string continentFilter = string.Empty;
+
+    protected override async Task OnInitializedAsync() => await LoadCountries();
+
+    private async Task LoadCountries()
+    {
+        isLoading = true;
+        errorMessage = null;
+
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(continentFilter))
+                countries = await CountryService.GetByContinentAsync(continentFilter);
+            else
+                countries = await CountryService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private Task ClearFilter()
+    {
+        continentFilter = string.Empty;
+        return LoadCountries();
+    }
+}

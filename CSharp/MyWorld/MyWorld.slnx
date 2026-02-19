@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="MyWorld.API/MyWorld.API.csproj" />
+  <Project Path="MyWorld.Client/MyWorld.Client.csproj" />
+</Solution>

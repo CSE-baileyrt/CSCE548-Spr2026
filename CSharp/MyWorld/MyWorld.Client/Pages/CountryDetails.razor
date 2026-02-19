@@ -1,0 +1,77 @@
+﻿@page "/country/{Code}"
+@inject MyWorld.Client.Services.CountryService CountryService
+@using MyWorld.Client.Models
+
+<h3>Country details</h3>
+
+@if (isLoading)
+{
+    <p><em>Loading...</em></p>
+}
+else if (errorMessage != null)
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+else if (country == null)
+{
+    <p>Country not found.</p>
+}
+else
+{
+    <div class="card mb-3">
+        <div class="card-body">
+            <h4>@country.Name (@country.Code)</h4>
+            <p><b>Continent:</b> @country.Continent</p>
+            <p><b>Population:</b> @(country.Population?.ToString("N0") ?? "—")</p>
+        </div>
+    </div>
+
+    <h5>Cities</h5>
+    @if (country.Cities == null || !country.Cities.Any())
+    {
+        <p>No cities available.</p>
+    }
+    else
+    {
+        <table class="table">
+            <thead>
+                <tr><th>Name</th><th>District</th><th>Population</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var city in country.Cities)
+                {
+                    <tr>
+                        <td>@city.Name</td>
+                        <td>@city.District</td>
+                        <td>@(city.Population?.ToString("N0") ?? "-")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+}
+
+@code {
+    [Parameter] public string Code { get; set; } = default!;
+    private CountryDto? country;
+    private bool isLoading;
+    private string? errorMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+        try
+        {
+            country = await CountryService.GetByCodeAsync(Code);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}
