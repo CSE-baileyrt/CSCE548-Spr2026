@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>PBJ Project UI</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+        }
+        h2 {
+            margin-top: 40px;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 10px;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f0f0f0;
+        }
+        button {
+            margin-top: 10px;
+            padding: 6px 12px;
+        }
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+
+<h1>PBJ Project API Browser UI</h1>
+
+<button onclick="loadAll()">Load All Data</button>
+
+<div id="error" class="error"></div>
+
+<h2>Breads</h2>
+<div id="breads"></div>
+
+<h2>Peanut Butters</h2>
+<div id="peanutbutters"></div>
+
+<h2>Jellies</h2>
+<div id="jellies"></div>
+
+<h2>PBJ Sandwiches</h2>
+<div id="sandwiches"></div>
+
+<script>
+const API_BASE = "http://localhost:8000";
+
+async function fetchData(endpoint) {
+    const response = await fetch(`${API_BASE}${endpoint}`);
+    if (!response.ok) {
+        throw new Error(`Error fetching ${endpoint}: ${response.status}`);
+    }
+    return await response.json();
+}
+
+function renderTable(containerId, data) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = "";
+
+    if (!data || data.length === 0) {
+        container.innerHTML = "<p>No records found.</p>";
+        return;
+    }
+
+    const table = document.createElement("table");
+    const headerRow = document.createElement("tr");
+
+    // Use keys from first object as columns
+    Object.keys(data[0]).forEach(key => {
+        const th = document.createElement("th");
+        th.textContent = key;
+        headerRow.appendChild(th);
+    });
+
+    table.appendChild(headerRow);
+
+    data.forEach(item => {
+        const row = document.createElement("tr");
+        Object.values(item).forEach(value => {
+            const td = document.createElement("td");
+
+            // If nested object (like sandwich relationships), stringify it
+            if (typeof value === "object" && value !== null) {
+                td.textContent = JSON.stringify(value);
+            } else {
+                td.textContent = value;
+            }
+
+            row.appendChild(td);
+        });
+        table.appendChild(row);
+    });
+
+    container.appendChild(table);
+}
+
+async function loadBreads() {
+    const breads = await fetchData("/breads");
+    renderTable("breads", breads);
+}
+
+async function loadPeanutButters() {
+    const pbs = await fetchData("/peanutbutters");
+    renderTable("peanutbutters", pbs);
+}
+
+async function loadJellies() {
+    const jellies = await fetchData("/jellies");
+    renderTable("jellies", jellies);
+}
+
+async function loadSandwiches() {
+    const sandwiches = await fetchData("/sandwiches");
+    renderTable("sandwiches", sandwiches);
+}
+
+async function loadAll() {
+    document.getElementById("error").textContent = "";
+    try {
+        await Promise.all([
+            loadBreads(),
+            loadPeanutButters(),
+            loadJellies(),
+            loadSandwiches()
+        ]);
+    } catch (err) {
+        document.getElementById("error").textContent = err.message;
+    }
+}
+</script>
+
+</body>
+</html>
